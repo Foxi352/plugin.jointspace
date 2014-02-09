@@ -24,12 +24,28 @@ Description of the attributes:
 * __host__: IP or hostname of the TV set
 * __port__: Port number of Jointspace running on the TV set, normally telnet port 1925
 
-## items.conf
+## items.conf example
 
 <pre>
+[TV]
+	type = bool
+	visu_acl = rw
+	jointspace_cmd = power
+	enforce_updates = on
+	[[Mute]]
+		type = bool
+		visu_acl = rw
+		jointspace_cmd = mute
+		enforce_updates = on
+	[[Volume]]
+		type = num
+		visu_acl = rw
+		jointspace_cmd = volume
+		enforce_updates = on		
+
 </pre>
 
-## pages Beispiele
+## pages example
 
 <pre>
 </pre>
