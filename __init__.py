@@ -61,11 +61,19 @@ class Jointspace():
     def parse_item(self, item):
         if 'jointspace_cmd' in item.conf:
             cmd = item.conf['jointspace_cmd']
-            logger.debug("Jointspace: Command {0} found".format(cmd))
             if (cmd is None):
                 return None
             else:
                 self._items[cmd] = item
+                logger.debug("Jointspace: Command {0} found".format(cmd))
+            return self.update_item
+        elif 'jointspace_listen' in item.conf:
+            info = item.conf['jointspace_listen']
+            if (info is None):
+                return None
+            else:
+                self._items[info] = item
+                logger.debug("Jointspace: Listening to {} info".format(info))
             return self.update_item
         else:
             return None
@@ -79,8 +87,12 @@ class Jointspace():
         if caller != 'Jointspace':
             if 'jointspace_cmd' in item.conf:
                 command = item.conf['jointspace_cmd']
+                if (' ' in command):
+                    args = command.split(' ')
+                    command = args[0]
+                    del args[0]
                 value = item()
-                logger.info("Jointspace: {0} set {1} to {2} for {3}".format(caller, command, value, item.id()))
+                logger.debug("Jointspace: {0} set {1} to {2} for {3}".format(caller, command, value, item.id()))
                 if(command == 'power') and (isinstance(value, bool)):
                     if not value:
                         logger.info("Jointspace: Powering down")
@@ -90,17 +102,18 @@ class Jointspace():
                 elif(command == 'mute') and (isinstance(value, bool)):
                     self._post_json(json.dumps({'muted': value}), "/1/audio/volume")
                 elif(command == 'volume') and (isinstance(value, int)):
-                    self._post_json(json.dumps({'muted': False, 'current': value * self._volmax / 255}), "/1/audio/volume")
-                #elif(command == 'bass') and (isinstance(value, int)):
-                #    self._send('PSBAS {0}'.format(value))
-                #elif(command == 'trebble') and (isinstance(value, int)):
-                #    self._send('PSTRE {0}'.format(value))
-                #elif(command == 'volume+'):
-                #    self._send('MVUP')
-                #elif(command == 'volume-'):
-                #    self._send('MVDOWN')
-                #elif(command == 'source'):
-                #    self._send('SI{}'.format(value))
+                    self._post_json(json.dumps({'current': value * self._volmax / 255}), "/1/audio/volume")
+                elif(command == 'channel'):
+                    channel = args[0]
+                    logger.info("Jointspace: switching to channel {}".format(channel))
+                    for digit in channel:
+                        self._send_key('Digit' + digit)
+                        sleep(0.2)
+                    self._send_key('Confirm')
+                elif(command == 'sendkey'):
+                    key = args[0]
+                    logger.info("Jointspace: sending key {}".format(key))
+                    self._send_key(key)
                 else:
                     logger.warning("Jointspace: Command {0} or value {1} invalid".format(command, value))
 
@@ -111,6 +124,8 @@ class Jointspace():
             self._volmin = int(resp['min'])
             self._volmax = int(resp['max'])
             self._muted = resp['muted']
+            if not self._power:
+                self._poll_channels
             self._power = True
             self._volume = int(resp['current']) * 255 / self._volmax
             if 'power' in self._items:
@@ -127,6 +142,23 @@ class Jointspace():
             self._muted = False
             if 'mute' in self._items:
                 self._items['mute'](self._muted, 'Jointspace', self._host)
+        resp = self._request_json("/1/channels/current")
+        # Get ID of current channel and poll for preset number and channel name
+        if(resp):
+            logger.debug("Jointspace: Getting details for channel {}".format(resp['id']))
+            resp = self._request_json("/1/channels/" + resp['id'])
+            if(resp):
+                self._channel = resp['preset'] + ' - ' + resp['name']
+                logger.debug("Jointspace: Channel is {}".format(self._channel))
+                if 'channel' in self._items:
+                    self._items['channel'](self._channel, 'Jointspace', self._host)
+
+    # Poll channellist
+    def _poll_channels(self):
+        resp = self._request_json("/1/channels")
+        if(resp):
+            logger.debug("Jointspace: got channellist")
+            print(resp)
 
     # post json requests to Jointspace REST API
     def _post_json(self, json, path):
