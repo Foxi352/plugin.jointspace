@@ -152,6 +152,17 @@ class Jointspace():
                 logger.debug("Jointspace: Channel is {}".format(self._channel))
                 if 'channel' in self._items:
                     self._items['channel'](self._channel, 'Jointspace', self._host)
+        # Get current source
+        resp = self._request_json("/1/sources/current")
+        if(resp):
+            _id = resp['id']
+            logger.debug("Jointspace: Getting details for source {}".format(_id))
+            resp = self._request_json("/1/sources")
+            if(resp):
+                self._source = resp[_id]['name']
+                logger.debug("Jointspace: Source is {}".format(self._source))
+                if 'source' in self._items:
+                    self._items['source'](self._source, 'Jointspace', self._host)
 
     # Poll channellist
     def _poll_channels(self):
