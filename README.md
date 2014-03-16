@@ -22,7 +22,7 @@ Should work with all Philips TV sets > 2010 (http://jointspace.sourceforge.net)
 Description of the attributes:
 
 * __host__: IP or hostname of the TV set
-* __port__: Port number of Jointspace running on the TV set, normally port 1925
+* __port__: Port number of Jointspace running on the TV set, default port 1925
 
 ## items.conf example
 
@@ -42,6 +42,14 @@ Description of the attributes:
 		visu_acl = rw
 		jointspace_cmd = volume
 		enforce_updates = on		
+	[[Channel]]
+		type = str
+		jointspace_listen = channel
+		enforce_updates = on	
+	[[Source]]
+		type = str
+		jointspace_cmd = source
+		enforce_updates = on	
 	[[Keys]]
 		[[[Standby]]]
 			type = bool
@@ -68,22 +76,19 @@ Description of the attributes:
 			visu_acl = rw
 			enforce_updates = on		
 			jointspace_cmd = sendkey ChannelStepDown
+		[...] u.s.w. Liste hier: http://jointspace.sourceforge.net/projectdata/documentation/jasonApi/1/doc/API-Method-input-key-POST.html
 	[[Channels]]
 		[[[ARD]]]
 			type = bool
 			visu_acl = rw
 			enforce_updates = on
 			jointspace_cmd = channel 1
-		[[[ZDF]]]
-			type = bool
-			visu_acl = rw
-			enforce_updates = on
-			jointspace_cmd = channel 2
 		[[[SUPERRTL]]]
 			type = bool
 			visu_acl = rw
 			enforce_updates = on
 			jointspace_cmd = channel 675
+		[...] u.s.w.
 
 </pre>
 
